@@ -76,10 +76,15 @@ case class MilvusRelation(
       val milvusUtil = new MilvusUtil(uri, token, dbName)
       val milvusRows: util.List[JsonObject] = new util.ArrayList[JsonObject]()
       rows.foreach(row => {
-        val milvusRow = SparkData2milvusData(milvusSchemas, row)
-        milvusRows.add(milvusRow)
+        milvusRows.add(SparkData2milvusData(milvusSchemas, row))
+        if (milvusRows.size() >= batchsize.toInt) {
+          milvusUtil.insertCollection(collectionName, milvusRows)
+          milvusRows.clear()
+        }
       })
-      milvusUtil.insertCollection(collectionName, milvusRows)
+      if (milvusRows.size() > 0) {
+        milvusUtil.insertCollection(collectionName, milvusRows)
+      }
     })
   }
 
