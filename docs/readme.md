@@ -1,6 +1,6 @@
-# milvus-spark-connector
+# milvus2milvus
 
-milvus-spark-connector, 支持 milvus 2.5.x 等版本
+milvus 数据导入导出工具, 支持 2.5.x 等版本
 
 ## (1) Requirements
 - jdk8

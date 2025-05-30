@@ -24,6 +24,6 @@ project_dir=$(dirname "$(pwd)")
 
 echo "build ..."
 cd $project_dir
-mvn install -Dmaven.test.skip=true -DskipTests
+mvn clean package
 
 echo "build successfully"
