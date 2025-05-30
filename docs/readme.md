@@ -9,34 +9,9 @@ milvus 数据导入导出工具, 支持 2.5.x 等版本
 
 ```shell
 
-# (1) maven local install
-# milvus-spark-connector-1.0.0.jar 可以在release发布页面下载获取
-mvn install:install-file -Dfile=milvus-spark-connector-1.0.0.jar -DgroupId=com.luckercs -DartifactId=milvus-spark-connector -Dversion=1.0.0 -Dpackaging=jar
+# milvus2milvus
+java -cp milvus2milvus-1.0.0.jar Milvus2Milvus --uri <SRC_MILVUS_URI> --token <SRC_MILVUS_TOKEN> --collections * --t_uri <TARGET_MILVUS_URI> --t_token <TARGET_MILVUS_TOKEN>
 
-# (2) add maven dependency
-<dependency>
-    <groupId>com.luckercs</groupId>
-    <artifactId>milvus-spark-connector</artifactId>
-    <version>1.0.0</version>
-</dependency>
-<dependency>
-    <groupId>io.milvus</groupId>
-    <artifactId>milvus-sdk-java</artifactId>
-    <version>2.5.9</version>
-</dependency>
-
-# (3) read and write milvus
-val df = spark.read.format("milvus")
-      .option("uri", "http://localhost:19530")
-      .option("token", "root:Milvus")
-      .option("collection", "test")
-      .load()
-
-df.write.format("milvus")
-      .option("uri", "http://localhost:19530")
-      .option("token", "root:Milvus")
-      .option("collection", "test")
-      .save()
 ```
 ## (3) Thanks
 
