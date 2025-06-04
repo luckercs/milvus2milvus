@@ -21,6 +21,7 @@ object Milvus2Milvus {
     val collections = commandLine.getOptionValue("collections", "*")
     val t_uri = commandLine.getOptionValue("t_uri")
     val t_token = commandLine.getOptionValue("t_token", "root:Milvus")
+    val batchsize = commandLine.getOptionValue("batchsize", "1000").toInt
 
     val dbCollections = parseCollections(uri, token, collections)
     LOG.info(log_flag + "start move collections schemas: " + dbCollections.mkString(", "))
@@ -36,15 +37,18 @@ object Milvus2Milvus {
         .option("token", token)
         .option("database", db)
         .option("collection", col)
+        .option("batchsize", batchsize)
         .load()
       val count = df.count()
+      LOG.info(log_flag + "Read " + count + " records: " + db + "." + col)
 
       df.write.format("milvus")
         .option("uri", t_uri)
         .option("token", t_token)
         .option("database", db)
         .option("collection", col)
-        .mode(SaveMode.Overwrite)
+        .option("batchsize", batchsize)
+        .mode(SaveMode.Append)
         .save()
       LOG.info(log_flag + "Wrote " + count + " records: " + db + "." + col)
     })

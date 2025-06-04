@@ -9,8 +9,14 @@ milvus 数据导入导出工具, 支持 2.5.x 等版本
 
 ```shell
 
-# milvus2milvus
-java -cp milvus2milvus-1.0.0.jar Milvus2Milvus --uri <SRC_MILVUS_URI> --token <SRC_MILVUS_TOKEN> --collections * --t_uri <TARGET_MILVUS_URI> --t_token <TARGET_MILVUS_TOKEN>
+# 默认导入所有库和集合
+java -cp milvus2milvus-1.0.0.jar Milvus2Milvus --uri <SRC_MILVUS_URI> --token <SRC_MILVUS_TOKEN> --t_uri <TARGET_MILVUS_URI> --t_token <TARGET_MILVUS_TOKEN> --collections * 
+
+# 导入指定库下的所有集合
+java -cp milvus2milvus-1.0.0.jar Milvus2Milvus --uri <SRC_MILVUS_URI> --token <SRC_MILVUS_TOKEN> --t_uri <TARGET_MILVUS_URI> --t_token <TARGET_MILVUS_TOKEN> --collections test.*
+
+# 导入指定集合
+java -cp milvus2milvus-1.0.0.jar Milvus2Milvus --uri <SRC_MILVUS_URI> --token <SRC_MILVUS_TOKEN> --t_uri <TARGET_MILVUS_URI> --t_token <TARGET_MILVUS_TOKEN> --collections test.milvus1,test2.milvus2
 
 ```
 ## (3) Thanks

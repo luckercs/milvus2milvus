@@ -77,6 +77,7 @@ public class MilvusUtil {
 
     public void createCollectionFromExistsCollection(MilvusClientV2 milvusClientSrc, MilvusClientV2 milvusClientTarget, String dbName, String collectionName) {
         DescribeCollectionResp describeCollectionResp = milvusClientSrc.describeCollection(DescribeCollectionReq.builder().databaseName(dbName).collectionName(collectionName).build());
+
         milvusClientTarget.createCollection(CreateCollectionReq.builder().databaseName(dbName).collectionName(collectionName)
                 .collectionSchema(describeCollectionResp.getCollectionSchema())
                 .autoID(describeCollectionResp.getAutoID())
@@ -85,7 +86,6 @@ public class MilvusUtil {
                 .enableDynamicField(describeCollectionResp.getEnableDynamicField())
                 .numShards(describeCollectionResp.getShardsNum())
                 .properties(describeCollectionResp.getProperties())
-                .numPartitions(describeCollectionResp.getNumOfPartitions().intValue())
                 .build());
 
         for (String partitionName : milvusClientSrc.listPartitions(ListPartitionsReq.builder().collectionName(collectionName).build())) {
