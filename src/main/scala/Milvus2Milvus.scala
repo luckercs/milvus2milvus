@@ -3,6 +3,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters.asScalaBufferConverter
+import scala.collection.immutable
 import scala.collection.mutable.ListBuffer
 
 object Milvus2Milvus {
@@ -19,11 +20,12 @@ object Milvus2Milvus {
     val uri = commandLine.getOptionValue("uri", "http://localhost:19530")
     val token = commandLine.getOptionValue("token", "root:Milvus")
     val collections = commandLine.getOptionValue("collections", "*")
+    val collectionsSkip = commandLine.getOptionValue("skip", "")
     val t_uri = commandLine.getOptionValue("t_uri")
     val t_token = commandLine.getOptionValue("t_token", "root:Milvus")
     val batchsize = commandLine.getOptionValue("batchsize", "1000").toInt
 
-    val dbCollections = parseCollections(uri, token, collections)
+    val dbCollections = parseCollections(uri, token, collections, collectionsSkip)
     LOG.info(log_flag + "start move collections schemas: " + dbCollections.mkString(", "))
     destSchemaCreate(uri, token, t_uri, t_token, dbCollections)
     LOG.info(log_flag + "start move collections data: " + dbCollections.mkString(", "))
@@ -56,9 +58,9 @@ object Milvus2Milvus {
     spark.close()
   }
 
-  def parseCollections(uri: String, token: String, collections: String): List[String] = {
+  def parseCollections(uri: String, token: String, collections: String, collectionsSkip: String): List[String] = {
     val parsedCollections = ListBuffer[String]()
-    collections.split(",").foreach(collection => {
+    collections.trim.split(",").foreach(collection => {
       if (collection.trim().contains(".")) {
         if (collection.trim().split("\\.").length != 2) {
           throw new IllegalArgumentException("Invalid collections param: " + collection)
@@ -89,6 +91,11 @@ object Milvus2Milvus {
         }
       }
     })
+
+    if(!collectionsSkip.trim.equals("")){
+      val collectionsSkipLists = collectionsSkip.trim.split(",").toList
+      parsedCollections --= collectionsSkipLists
+    }
     parsedCollections.toList
   }
 
