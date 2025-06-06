@@ -24,10 +24,15 @@ object Milvus2Milvus {
     val t_uri = commandLine.getOptionValue("t_uri")
     val t_token = commandLine.getOptionValue("t_token", "root:Milvus")
     val batchsize = commandLine.getOptionValue("batchsize", "1000").toInt
+    val skip_schema = commandLine.hasOption("skip_schema")
+    val skip_index = commandLine.hasOption("skip_index")
 
     val dbCollections = parseCollections(uri, token, collections, collectionsSkip)
-    LOG.info(log_flag + "start move collections schemas: " + dbCollections.mkString(", "))
-    destSchemaCreate(uri, token, t_uri, t_token, dbCollections)
+    if (!skip_schema) {
+      LOG.info(log_flag + "start create target collections schemas: " + dbCollections.mkString(", "))
+      destSchemaCreate(uri, token, t_uri, t_token, dbCollections, skip_index)
+    }
+
     LOG.info(log_flag + "start move collections data: " + dbCollections.mkString(", "))
 
     dbCollections.foreach(item => {
@@ -92,14 +97,14 @@ object Milvus2Milvus {
       }
     })
 
-    if(!collectionsSkip.trim.equals("")){
+    if (!collectionsSkip.trim.equals("")) {
       val collectionsSkipLists = collectionsSkip.trim.split(",").toList
       parsedCollections --= collectionsSkipLists
     }
     parsedCollections.toList
   }
 
-  def destSchemaCreate(uri: String, token: String, t_uri: String, t_token: String, collections: List[String]): Unit = {
+  def destSchemaCreate(uri: String, token: String, t_uri: String, t_token: String, collections: List[String], skip_index: Boolean): Unit = {
     val milvusUtil = new MilvusUtil(uri, token)
     val t_milvusUtil = new MilvusUtil(t_uri, t_token)
 
@@ -124,7 +129,7 @@ object Milvus2Milvus {
       val col = item.split("\\.")(1)
       val milvusClient = milvusUtil.getMilvusClient(db)
       val t_milvusClient = t_milvusUtil.getMilvusClient(db)
-      t_milvusUtil.createCollectionFromExistsCollection(milvusClient, t_milvusClient, db, col)
+      t_milvusUtil.createCollectionFromExistsCollection(milvusClient, t_milvusClient, db, col, skip_index)
       LOG.info(log_flag + "target create collection: " + item)
       milvusClient.close()
       t_milvusClient.close()

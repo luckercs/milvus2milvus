@@ -78,7 +78,7 @@ public class MilvusUtil {
     }
 
 
-    public void createCollectionFromExistsCollection(MilvusClientV2 milvusClientSrc, MilvusClientV2 milvusClientTarget, String dbName, String collectionName) {
+    public void createCollectionFromExistsCollection(MilvusClientV2 milvusClientSrc, MilvusClientV2 milvusClientTarget, String dbName, String collectionName, boolean skip_index) {
         DescribeCollectionResp describeCollectionResp = milvusClientSrc.describeCollection(DescribeCollectionReq.builder().databaseName(dbName).collectionName(collectionName).build());
         Boolean hasPartitionKey = false;
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = describeCollectionResp.getCollectionSchema().getFieldSchemaList();
@@ -126,50 +126,18 @@ public class MilvusUtil {
             }
         }
 
-        List<String> Indexes = milvusClientSrc.listIndexes(ListIndexesReq.builder().collectionName(collectionName).build());
-        if (Indexes != null && !Indexes.isEmpty()) {
-            List<IndexParam> indexParams = new ArrayList<>();
-            for (String indexName : Indexes) {
-                DescribeIndexResp describeIndexResp = milvusClientSrc.describeIndex(DescribeIndexReq.builder().databaseName(dbName).collectionName(collectionName).indexName(indexName).build());
-                DescribeIndexResp.IndexDesc indexSrc = describeIndexResp.getIndexDescByIndexName(indexName);
-                IndexParam indexParam = IndexParam.builder().fieldName(indexSrc.getFieldName()).indexName(indexName).indexType(indexSrc.getIndexType()).extraParams(Collections.unmodifiableMap(indexSrc.getExtraParams())).metricType(indexSrc.getMetricType()).build();
-                indexParams.add(indexParam);
+        if (!skip_index) {
+            List<String> Indexes = milvusClientSrc.listIndexes(ListIndexesReq.builder().collectionName(collectionName).build());
+            if (Indexes != null && !Indexes.isEmpty()) {
+                List<IndexParam> indexParams = new ArrayList<>();
+                for (String indexName : Indexes) {
+                    DescribeIndexResp describeIndexResp = milvusClientSrc.describeIndex(DescribeIndexReq.builder().databaseName(dbName).collectionName(collectionName).indexName(indexName).build());
+                    DescribeIndexResp.IndexDesc indexSrc = describeIndexResp.getIndexDescByIndexName(indexName);
+                    IndexParam indexParam = IndexParam.builder().fieldName(indexSrc.getFieldName()).indexName(indexName).indexType(indexSrc.getIndexType()).extraParams(Collections.unmodifiableMap(indexSrc.getExtraParams())).metricType(indexSrc.getMetricType()).build();
+                    indexParams.add(indexParam);
+                }
+                milvusClientTarget.createIndex(CreateIndexReq.builder().databaseName(dbName).collectionName(collectionName).indexParams(indexParams).build());
             }
-            milvusClientTarget.createIndex(CreateIndexReq.builder().databaseName(dbName).collectionName(collectionName).indexParams(indexParams).build());
         }
-    }
-
-    public static void main(String[] args) {
-        MilvusUtil milvusUtil = new MilvusUtil("http://localhost:19530", "");
-        milvusUtil.createDatabase("test", null);
-
-//        MilvusClientV2 milvusClient = milvusUtil.getMilvusClient("test");
-//        CreateCollectionReq.CollectionSchema collectionSchema = CreateCollectionReq.CollectionSchema.builder().build();
-//        collectionSchema.addField(AddFieldReq.builder().fieldName("my_id").dataType(DataType.Int64).isPrimaryKey(true).build());
-//        collectionSchema.addField(AddFieldReq.builder().fieldName("my_vector").dataType(DataType.FloatVector).dimension(5).build());
-//        collectionSchema.addField(AddFieldReq.builder().fieldName("my_varchar").dataType(DataType.VarChar).maxLength(512).build());
-//        List<IndexParam> indexParams = new ArrayList<>();
-//        indexParams.add(IndexParam.builder().fieldName("my_vector").indexType(IndexParam.IndexType.AUTOINDEX).metricType(IndexParam.MetricType.COSINE).build());
-//        milvusClient.createCollection(CreateCollectionReq.builder().databaseName("test").collectionName("test2").collectionSchema(collectionSchema).indexParams(indexParams).build());
-//        milvusClient.close();
-//
-//        milvusClient = milvusUtil.getMilvusClient("default");
-//        collectionSchema = CreateCollectionReq.CollectionSchema.builder().build();
-//        collectionSchema.addField(AddFieldReq.builder().fieldName("my_id").dataType(DataType.Int64).isPrimaryKey(true).build());
-//        collectionSchema.addField(AddFieldReq.builder().fieldName("my_vector").dataType(DataType.FloatVector).dimension(5).build());
-//        collectionSchema.addField(AddFieldReq.builder().fieldName("my_varchar").dataType(DataType.VarChar).maxLength(512).build());
-//        indexParams = new ArrayList<>();
-//        indexParams.add(IndexParam.builder().fieldName("my_vector").indexType(IndexParam.IndexType.AUTOINDEX).metricType(IndexParam.MetricType.COSINE).build());
-//        milvusClient.createCollection(CreateCollectionReq.builder().databaseName("default").collectionName("hello1").collectionSchema(collectionSchema).indexParams(indexParams).build());
-//        milvusClient.createCollection(CreateCollectionReq.builder().databaseName("default").collectionName("hello2").collectionSchema(collectionSchema).indexParams(indexParams).build());
-//        milvusClient.close();
-
-//
-        List<String> allDbs = milvusUtil.getAllDbs();
-        System.out.println(allDbs);
-        System.out.println("=================");
-
-//        List<String> allCollections = milvusUtil.findAllCollections("test");
-//        System.out.println(allCollections);
     }
 }
