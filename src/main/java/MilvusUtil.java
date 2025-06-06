@@ -14,6 +14,9 @@ import io.milvus.v2.service.index.request.ListIndexesReq;
 import io.milvus.v2.service.index.response.DescribeIndexResp;
 import io.milvus.v2.service.partition.request.CreatePartitionReq;
 import io.milvus.v2.service.partition.request.ListPartitionsReq;
+import io.milvus.v2.service.utility.request.CreateAliasReq;
+import io.milvus.v2.service.utility.request.ListAliasesReq;
+import io.milvus.v2.service.utility.response.ListAliasResp;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,20 +80,49 @@ public class MilvusUtil {
 
     public void createCollectionFromExistsCollection(MilvusClientV2 milvusClientSrc, MilvusClientV2 milvusClientTarget, String dbName, String collectionName) {
         DescribeCollectionResp describeCollectionResp = milvusClientSrc.describeCollection(DescribeCollectionReq.builder().databaseName(dbName).collectionName(collectionName).build());
+        Boolean hasPartitionKey = false;
+        List<CreateCollectionReq.FieldSchema> fieldSchemaList = describeCollectionResp.getCollectionSchema().getFieldSchemaList();
+        for (CreateCollectionReq.FieldSchema fieldSchema : fieldSchemaList) {
+            if (fieldSchema.getIsPartitionKey()) {
+                hasPartitionKey = true;
+                break;
+            }
+        }
 
-        milvusClientTarget.createCollection(CreateCollectionReq.builder().databaseName(dbName).collectionName(collectionName)
-                .collectionSchema(describeCollectionResp.getCollectionSchema())
-                .autoID(describeCollectionResp.getAutoID())
-                .consistencyLevel(describeCollectionResp.getConsistencyLevel())
-                .description(describeCollectionResp.getDescription())
-                .enableDynamicField(describeCollectionResp.getEnableDynamicField())
-                .numShards(describeCollectionResp.getShardsNum())
-                .properties(describeCollectionResp.getProperties())
-                .build());
+        if (hasPartitionKey) {
+            milvusClientTarget.createCollection(CreateCollectionReq.builder().databaseName(dbName).collectionName(collectionName)
+                    .collectionSchema(describeCollectionResp.getCollectionSchema())
+                    .autoID(describeCollectionResp.getAutoID())
+                    .consistencyLevel(describeCollectionResp.getConsistencyLevel())
+                    .description(describeCollectionResp.getDescription())
+                    .enableDynamicField(describeCollectionResp.getEnableDynamicField())
+                    .numShards(describeCollectionResp.getShardsNum())
+                    .properties(describeCollectionResp.getProperties())
+                    .numPartitions(describeCollectionResp.getNumOfPartitions().intValue())
+                    .build());
+        } else {
+            milvusClientTarget.createCollection(CreateCollectionReq.builder().databaseName(dbName).collectionName(collectionName)
+                    .collectionSchema(describeCollectionResp.getCollectionSchema())
+                    .autoID(describeCollectionResp.getAutoID())
+                    .consistencyLevel(describeCollectionResp.getConsistencyLevel())
+                    .description(describeCollectionResp.getDescription())
+                    .enableDynamicField(describeCollectionResp.getEnableDynamicField())
+                    .numShards(describeCollectionResp.getShardsNum())
+                    .properties(describeCollectionResp.getProperties())
+                    .build());
+        }
 
         for (String partitionName : milvusClientSrc.listPartitions(ListPartitionsReq.builder().collectionName(collectionName).build())) {
             if (!partitionName.equals("_default")) {
                 milvusClientTarget.createPartition(CreatePartitionReq.builder().collectionName(collectionName).partitionName(partitionName).build());
+            }
+        }
+
+        ListAliasResp listAliasResp = milvusClientSrc.listAliases(ListAliasesReq.builder().collectionName(collectionName).build());
+        List<String> alias = listAliasResp.getAlias();
+        if (alias != null && !alias.isEmpty()) {
+            for (String aliasName : alias) {
+                milvusClientTarget.createAlias(CreateAliasReq.builder().collectionName(collectionName).alias(aliasName).build());
             }
         }
 
