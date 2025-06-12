@@ -20,6 +20,7 @@ object Milvus2Milvus {
     val uri = commandLine.getOptionValue("uri", "http://localhost:19530")
     val token = commandLine.getOptionValue("token", "root:Milvus")
     val collections = commandLine.getOptionValue("collections", "*")
+    val targetDB = commandLine.getOptionValue("target_db", "")
     val collectionsSkip = commandLine.getOptionValue("skip", "")
     val t_uri = commandLine.getOptionValue("t_uri")
     val t_token = commandLine.getOptionValue("t_token", "root:Milvus")
@@ -30,7 +31,7 @@ object Milvus2Milvus {
     val dbCollections = parseCollections(uri, token, collections, collectionsSkip)
     if (!skip_schema) {
       LOG.info(log_flag + "start create target collections schemas: " + dbCollections.mkString(", "))
-      destSchemaCreate(uri, token, t_uri, t_token, dbCollections, skip_index)
+      destSchemaCreate(uri, token, t_uri, t_token, dbCollections, skip_index, targetDB)
     }
 
     LOG.info(log_flag + "start move collections data: " + dbCollections.mkString(", "))
@@ -49,15 +50,27 @@ object Milvus2Milvus {
       val count = df.count()
       LOG.info(log_flag + "Read " + count + " records: " + db + "." + col)
 
-      df.write.format("milvus")
-        .option("uri", t_uri)
-        .option("token", t_token)
-        .option("database", db)
-        .option("collection", col)
-        .option("batchsize", batchsize)
-        .mode(SaveMode.Append)
-        .save()
-      LOG.info(log_flag + "Wrote " + count + " records: " + db + "." + col)
+      if (!targetDB.trim().equals("")) {
+        df.write.format("milvus")
+          .option("uri", t_uri)
+          .option("token", t_token)
+          .option("database", targetDB)
+          .option("collection", col)
+          .option("batchsize", batchsize)
+          .mode(SaveMode.Append)
+          .save()
+        LOG.info(log_flag + "Wrote " + count + " records: " + targetDB + "." + col)
+      } else {
+        df.write.format("milvus")
+          .option("uri", t_uri)
+          .option("token", t_token)
+          .option("database", db)
+          .option("collection", col)
+          .option("batchsize", batchsize)
+          .mode(SaveMode.Append)
+          .save()
+        LOG.info(log_flag + "Wrote " + count + " records: " + db + "." + col)
+      }
     })
 
     spark.close()
@@ -104,35 +117,62 @@ object Milvus2Milvus {
     parsedCollections.toList
   }
 
-  def destSchemaCreate(uri: String, token: String, t_uri: String, t_token: String, collections: List[String], skip_index: Boolean): Unit = {
+  def destSchemaCreate(uri: String, token: String, t_uri: String, t_token: String, collections: List[String], skip_index: Boolean, targetDB: String): Unit = {
     val milvusUtil = new MilvusUtil(uri, token)
     val t_milvusUtil = new MilvusUtil(t_uri, t_token)
 
     val t_dbs = t_milvusUtil.getAllDbs()
-    collections.map(_.split("\\.")(0)).distinct.foreach(dbname => {
-      if (!dbname.equals("default") && !t_dbs.contains(dbname)) {
-        t_milvusUtil.createDatabase(dbname, milvusUtil.getDataBaseSchema(dbname))
-        LOG.info(log_flag + "target create database: " + dbname)
+    if (!targetDB.trim().equals("")) {
+      if (!t_dbs.contains(targetDB)) {
+        t_milvusUtil.createDatabase(targetDB, null)
+        LOG.info(log_flag + "target create database: " + targetDB)
       }
-    })
+    } else {
+      collections.map(_.split("\\.")(0)).distinct.foreach(dbname => {
+        if (!dbname.equals("default") && !t_dbs.contains(dbname)) {
+          t_milvusUtil.createDatabase(dbname, milvusUtil.getDataBaseSchema(dbname))
+          LOG.info(log_flag + "target create database: " + dbname)
+        }
+      })
+    }
 
     collections.foreach(item => {
       val db = item.split("\\.")(0)
       val col = item.split("\\.")(1)
-      if (t_milvusUtil.hasCollection(db, col)) {
-        throw new RuntimeException("target collection already exists: " + item + ", please check and drop it first.")
+      if (!targetDB.trim().equals("")) {
+        if (t_milvusUtil.hasCollection(targetDB, col)) {
+          throw new RuntimeException("target collection already exists: " + item + ", please check and drop it first.")
+        }
+      } else {
+        if (t_milvusUtil.hasCollection(db, col)) {
+          throw new RuntimeException("target collection already exists: " + item + ", please check and drop it first.")
+        }
       }
     })
 
-    collections.foreach(item => {
-      val db = item.split("\\.")(0)
-      val col = item.split("\\.")(1)
-      val milvusClient = milvusUtil.getMilvusClient(db)
-      val t_milvusClient = t_milvusUtil.getMilvusClient(db)
-      t_milvusUtil.createCollectionFromExistsCollection(milvusClient, t_milvusClient, db, col, skip_index)
-      LOG.info(log_flag + "target create collection: " + item)
-      milvusClient.close()
-      t_milvusClient.close()
-    })
+
+    if (!targetDB.trim().equals("")) {
+      collections.foreach(item => {
+        val db = item.split("\\.")(0)
+        val col = item.split("\\.")(1)
+        val milvusClient = milvusUtil.getMilvusClient(db)
+        val t_milvusClient = t_milvusUtil.getMilvusClient(targetDB)
+        t_milvusUtil.createCollectionFromExistsCollection(milvusClient, t_milvusClient, db, targetDB, col, skip_index)
+        LOG.info(log_flag + "target create collection: " + targetDB + "." + col)
+        milvusClient.close()
+        t_milvusClient.close()
+      })
+    } else {
+      collections.foreach(item => {
+        val db = item.split("\\.")(0)
+        val col = item.split("\\.")(1)
+        val milvusClient = milvusUtil.getMilvusClient(db)
+        val t_milvusClient = t_milvusUtil.getMilvusClient(db)
+        t_milvusUtil.createCollectionFromExistsCollection(milvusClient, t_milvusClient, db, db, col, skip_index)
+        LOG.info(log_flag + "target create collection: " + item)
+        milvusClient.close()
+        t_milvusClient.close()
+      })
+    }
   }
 }

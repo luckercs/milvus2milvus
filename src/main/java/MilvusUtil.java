@@ -73,12 +73,16 @@ public class MilvusUtil {
 
     public void createDatabase(String dbName, Map<String, String> properties) {
         MilvusClientV2 milvusClient = getMilvusClient("default");
-        milvusClient.createDatabase(CreateDatabaseReq.builder().databaseName(dbName).properties(properties).build());
+        if (properties == null) {
+            milvusClient.createDatabase(CreateDatabaseReq.builder().databaseName(dbName).build());
+        } else {
+            milvusClient.createDatabase(CreateDatabaseReq.builder().databaseName(dbName).properties(properties).build());
+        }
         milvusClient.close();
     }
 
 
-    public void createCollectionFromExistsCollection(MilvusClientV2 milvusClientSrc, MilvusClientV2 milvusClientTarget, String dbName, String collectionName, boolean skip_index) {
+    public void createCollectionFromExistsCollection(MilvusClientV2 milvusClientSrc, MilvusClientV2 milvusClientTarget, String dbName, String dbNameTarget, String collectionName, boolean skip_index) {
         DescribeCollectionResp describeCollectionResp = milvusClientSrc.describeCollection(DescribeCollectionReq.builder().databaseName(dbName).collectionName(collectionName).build());
         Boolean hasPartitionKey = false;
         List<CreateCollectionReq.FieldSchema> fieldSchemaList = describeCollectionResp.getCollectionSchema().getFieldSchemaList();
@@ -90,7 +94,7 @@ public class MilvusUtil {
         }
 
         if (hasPartitionKey) {
-            milvusClientTarget.createCollection(CreateCollectionReq.builder().databaseName(dbName).collectionName(collectionName)
+            milvusClientTarget.createCollection(CreateCollectionReq.builder().databaseName(dbNameTarget).collectionName(collectionName)
                     .collectionSchema(describeCollectionResp.getCollectionSchema())
                     .autoID(describeCollectionResp.getAutoID())
                     .consistencyLevel(describeCollectionResp.getConsistencyLevel())
@@ -101,7 +105,7 @@ public class MilvusUtil {
                     .numPartitions(describeCollectionResp.getNumOfPartitions().intValue())
                     .build());
         } else {
-            milvusClientTarget.createCollection(CreateCollectionReq.builder().databaseName(dbName).collectionName(collectionName)
+            milvusClientTarget.createCollection(CreateCollectionReq.builder().databaseName(dbNameTarget).collectionName(collectionName)
                     .collectionSchema(describeCollectionResp.getCollectionSchema())
                     .autoID(describeCollectionResp.getAutoID())
                     .consistencyLevel(describeCollectionResp.getConsistencyLevel())
@@ -136,7 +140,7 @@ public class MilvusUtil {
                     IndexParam indexParam = IndexParam.builder().fieldName(indexSrc.getFieldName()).indexName(indexName).indexType(indexSrc.getIndexType()).extraParams(Collections.unmodifiableMap(indexSrc.getExtraParams())).metricType(indexSrc.getMetricType()).build();
                     indexParams.add(indexParam);
                 }
-                milvusClientTarget.createIndex(CreateIndexReq.builder().databaseName(dbName).collectionName(collectionName).indexParams(indexParams).build());
+                milvusClientTarget.createIndex(CreateIndexReq.builder().databaseName(dbNameTarget).collectionName(collectionName).indexParams(indexParams).build());
             }
         }
     }

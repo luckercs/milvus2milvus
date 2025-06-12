@@ -9,6 +9,7 @@ public class OptionsProcessor {
         argOptions.addOption(new Option("u", "uri", true, "milvus uri address, eg: http://localhost:19530"));
         argOptions.addOption(new Option("t", "token", true, "milvus token, eg: root:Milvus"));
         argOptions.addOption(new Option("c", "collections", true, "milvus collection, eg: hello_milvus"));
+        argOptions.addOption(new Option("td", "target_db", true, "milvus target db"));
         argOptions.addOption(new Option("s", "skip", true, "milvus skip collection, eg: hello_milvus"));
         argOptions.addOption(new Option("ss", "skip_schema", false, "milvus skip collection schema create"));
         argOptions.addOption(new Option("si", "skip_index", false, "milvus skip collection index create"));
