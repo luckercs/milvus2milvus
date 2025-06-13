@@ -72,7 +72,7 @@ object Milvus2Milvus {
         LOG.info(log_flag + "Wrote " + count + " records: " + db + "." + col)
       }
     })
-
+    LOG.info(log_flag + " " +  dbCollections.size + " collections moved successfully.")
     spark.close()
   }
 

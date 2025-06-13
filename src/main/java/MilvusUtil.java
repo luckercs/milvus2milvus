@@ -1,9 +1,7 @@
 import io.milvus.v2.client.ConnectConfig;
 import io.milvus.v2.client.MilvusClientV2;
 import io.milvus.v2.common.IndexParam;
-import io.milvus.v2.service.collection.request.CreateCollectionReq;
-import io.milvus.v2.service.collection.request.DescribeCollectionReq;
-import io.milvus.v2.service.collection.request.HasCollectionReq;
+import io.milvus.v2.service.collection.request.*;
 import io.milvus.v2.service.collection.response.DescribeCollectionResp;
 import io.milvus.v2.service.database.request.CreateDatabaseReq;
 import io.milvus.v2.service.database.request.DescribeDatabaseReq;
@@ -61,6 +59,19 @@ public class MilvusUtil {
         Boolean res = milvusClient.hasCollection(HasCollectionReq.builder().collectionName(collectionName).build());
         milvusClient.close();
         return res;
+    }
+
+    public boolean isCollectionLoaded(String dbName, String collectionName){
+        MilvusClientV2 milvusClient = getMilvusClient(dbName);
+        Boolean res = milvusClient.getLoadState(GetLoadStateReq.builder().collectionName(collectionName).build());
+        milvusClient.close();
+        return res;
+    }
+
+    public void loadCollection(String dbName, String collectionName){
+        MilvusClientV2 milvusClient = getMilvusClient(dbName);
+        milvusClient.loadCollection(LoadCollectionReq.builder().collectionName(collectionName).sync(true).build());
+        milvusClient.close();
     }
 
     public Map<String, String> getDataBaseSchema(String dbName) {
