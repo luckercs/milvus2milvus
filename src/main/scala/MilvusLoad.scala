@@ -17,6 +17,8 @@ object MilvusLoad {
 
     val dbCollections = parseCollections(uri, token, collections, collectionsSkip)
 
+    val collectionNumALL = dbCollections.size
+    var current = 1
     val t_milvusUtil = new MilvusUtil(t_uri, t_token)
     dbCollections.foreach(item => {
       var db = item.split("\\.")(0)
@@ -26,11 +28,12 @@ object MilvusLoad {
       }
 
       if (t_milvusUtil.isCollectionLoaded(db, col)) {
-        LOG.warn("Collection " + db + "." + col + " is already loaded in target Milvus, skip")
+        LOG.warn("Collection " + db + "." + col + " is already loaded in target Milvus, skip it" + ", progress: [" + current + "/" + collectionNumALL + "]")
       } else {
         t_milvusUtil.loadCollection(db, col)
-        LOG.info("Collection " + db + "." + col + " load success")
+        LOG.info("Collection " + db + "." + col + " load success" + ", progress: [" + current + "/" + collectionNumALL + "]")
       }
+      current = current + 1
     })
     LOG.info(dbCollections.size + " collections load finished")
   }

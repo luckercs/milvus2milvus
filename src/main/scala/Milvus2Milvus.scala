@@ -35,7 +35,8 @@ object Milvus2Milvus {
     }
 
     LOG.info(log_flag + "start move collections data: " + dbCollections.mkString(", "))
-
+    val collectionNumALL = dbCollections.size
+    var current = 1
     dbCollections.foreach(item => {
       val db = item.split("\\.")(0)
       val col = item.split("\\.")(1)
@@ -59,7 +60,7 @@ object Milvus2Milvus {
           .option("batchsize", batchsize)
           .mode(SaveMode.Append)
           .save()
-        LOG.info(log_flag + "Wrote " + count + " records: " + targetDB + "." + col)
+        LOG.info(log_flag + "Wrote " + count + " records: " + targetDB + "." + col + ", progress: [" + current + "/" + collectionNumALL + "]")
       } else {
         df.write.format("milvus")
           .option("uri", t_uri)
@@ -69,10 +70,11 @@ object Milvus2Milvus {
           .option("batchsize", batchsize)
           .mode(SaveMode.Append)
           .save()
-        LOG.info(log_flag + "Wrote " + count + " records: " + db + "." + col)
+        LOG.info(log_flag + "Wrote " + count + " records: " + db + "." + col + ", progress: [" + current + "/" + collectionNumALL + "]")
       }
+      current = current + 1
     })
-    LOG.info(log_flag + " " +  dbCollections.size + " collections moved successfully.")
+    LOG.info(log_flag + " " + dbCollections.size + " collections moved successfully.")
     spark.close()
   }
 
