@@ -1,4 +1,6 @@
-import Milvus2Milvus.parseCollections
+package milvus
+
+import milvus.Milvus2Milvus.parseCollections
 import org.slf4j.LoggerFactory
 
 object MilvusLoad {

@@ -1,9 +1,12 @@
+package milvus
+
+import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.core.config.Configurator
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters.asScalaBufferConverter
-import scala.collection.immutable
 import scala.collection.mutable.ListBuffer
 
 object Milvus2Milvus {
@@ -11,10 +14,6 @@ object Milvus2Milvus {
   private val log_flag = "======================="
 
   def main(args: Array[String]): Unit = {
-    val sparkConf = new SparkConf
-    sparkConf.set("fs.file.impl", "org.apache.hadoop.fs.LocalFileSystem")
-    val spark = SparkSession.builder.appName("Nebula2Csv").master("local[*]").config(sparkConf).getOrCreate()
-
     val optionsProcessor = new OptionsProcessor()
     val commandLine = optionsProcessor.parse(args)
     val uri = commandLine.getOptionValue("uri", "http://localhost:19530")
@@ -27,6 +26,17 @@ object Milvus2Milvus {
     val batchsize = commandLine.getOptionValue("batchsize", "1000").toInt
     val skip_schema = commandLine.hasOption("skip_schema")
     val skip_index = commandLine.hasOption("skip_index")
+    val log_detail = commandLine.hasOption("detail")
+
+    if (!log_detail) {
+      Configurator.setRootLevel(Level.WARN)
+    }
+
+    val sparkConf = new SparkConf
+    sparkConf.set("fs.file.impl", "org.apache.hadoop.fs.LocalFileSystem")
+    val spark = SparkSession.builder.appName("Nebula2Csv").master("local[*]").config(sparkConf).getOrCreate()
+
+    Configurator.setLevel("milvus", Level.INFO)
 
     val dbCollections = parseCollections(uri, token, collections, collectionsSkip)
     if (!skip_schema) {

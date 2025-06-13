@@ -1,3 +1,5 @@
+package milvus;
+
 import org.apache.commons.cli.*;
 
 public class OptionsProcessor {
@@ -16,6 +18,7 @@ public class OptionsProcessor {
         argOptions.addOption(new Option("tu", "t_uri", true, "target milvus uri address, eg: http://localhost:19530"));
         argOptions.addOption(new Option("tt", "t_token", true, "target milvus token, eg: root:Milvus"));
         argOptions.addOption(new Option("b", "batchsize", true, "milvus read and write batchsize, eg: 1000"));
+        argOptions.addOption(new Option("detail", false, "print log detail"));
         argOptions.addOption(new Option("h", "help", true, "show help"));
     }
 

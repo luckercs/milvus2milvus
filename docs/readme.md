@@ -10,7 +10,7 @@ milvus 数据导入导出工具, 支持 2.5.x 等版本
 - (1) milvus2milvus
 
 ```shell
-java -cp milvus2milvus-1.0.0.jar Milvus2Milvus \
+java -cp milvus2milvus-1.0.0.jar milvus.Milvus2Milvus \
 --uri '<SRC_MILVUS_URI>' \
 --token '<SRC_MILVUS_TOKEN>' \
 --t_uri '<TARGET_MILVUS_URI>' \
@@ -35,7 +35,7 @@ java -cp milvus2milvus-1.0.0.jar Milvus2Milvus \
 
 加载之前请确保Milvus端内存资源足够
 ```shell
-java -cp milvus2milvus-1.0.0.jar MilvusLoad \
+java -cp milvus2milvus-1.0.0.jar milvus.MilvusLoad \
 --uri '<SRC_MILVUS_URI>' \
 --token '<SRC_MILVUS_TOKEN>' \
 --t_uri '<TARGET_MILVUS_URI>' \
