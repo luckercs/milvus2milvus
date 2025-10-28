@@ -34,7 +34,7 @@ object Milvus2Milvus {
 
     val sparkConf = new SparkConf
     sparkConf.set("fs.file.impl", "org.apache.hadoop.fs.LocalFileSystem")
-    val spark = SparkSession.builder.appName("Nebula2Csv").master("local[*]").config(sparkConf).getOrCreate()
+    val spark = SparkSession.builder.appName("Milvus2Milvus").master("local[*]").config(sparkConf).getOrCreate()
 
     Configurator.setLevel("milvus", Level.INFO)
 
